@@ -20,6 +20,7 @@ public class RemoteDriver {
     	// Added FCL file
     	String fileName = "FuzzyTruck.fcl";
         // FCL File needs to be read only once
+    	FIS fis = FIS.load(fileName, true);
         	    	
         Socket kkSocket = null;
         PrintWriter out = null;
@@ -56,7 +57,6 @@ public class RemoteDriver {
         	/////////////////////////////////////////////////////////////////////////////////////
         	// TODO sua lógica fuzzy vai aqui use os valores de x,y e angle obtidos. x e y estao em [0,1] e angulo [0,360)
 
-        	FIS fis = FIS.load(fileName, true);
 			fis.setVariable("x", x);
 			fis.setVariable("angle", angle);
 			fis.evaluate();
