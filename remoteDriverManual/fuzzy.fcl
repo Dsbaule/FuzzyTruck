@@ -1,0 +1,122 @@
+FUNCTION_BLOCK truck
+
+VAR_INPUT
+    posX : REAL;
+    posY : REAL;
+    angulo : REAL;
+END_VAR
+
+VAR_OUTPUT
+    direcao : REAL;
+END_VAR
+
+FUZZIFY posX
+ TERM esquerda := (0, 1) (0.35, 0);
+ TERM esquerda_inclinado := (0.3, 0) (0.4, 1) (0.5, 0);
+ TERM centro_x := (0.4, 0) (0.5, 1) (0.6, 0);
+ TERM direita_inclinado := (0.5, 0) (0.6, 1) (0.7, 0);
+ TERM direita := (0.65, 0) (1, 1);
+END_FUZZIFY
+
+FUZZIFY posY
+ TERM cima:= (0, 1) (0.3, 0);
+ TERM cima := (0.2, 0) (0.325, 1) (0.45, 0);
+ TERM centro_y := (0.4, 0) (0.5, 1) (0.6, 0);
+ TERM baixo_inclinado := (0.55, 0) (0.675, 1) (0.8, 0);
+ TERM baixo := (0.7, 0) (1, 1);
+END_FUZZIFY
+
+FUZZIFY angulo
+ TERM virado_direita := (0, 1) (45, 0) (315, 0) (360, 1);
+ TERM virado_direita_cima := (0, 0) (45, 1) (90, 0);
+ TERM virado_cima := (45, 0) (90, 1) (135, 0);
+ TERM virado_esquerda_cima := (90, 0) (135, 1) (180, 0);
+ TERM virado_esquerda := (135, 0) (180, 1) (225, 0);
+ TERM virado_esquerda_baixo := (180, 0) (225, 1) (270, 0);
+ TERM virado_baixo := (225, 0) (270, 1) (315, 0);
+ TERM virado_direita_baixo := (270, 0) (315, 1) (360, 0);
+END_FUZZIFY
+
+
+
+DEFUZZIFY direcao
+ TERM d_esq_completa := (-12, 1) (-6, 0);
+ TERM d_esq := (-8,0) (-6, 1) (-4, 0);
+ TERM d_esq_inclinada := (-4, 0) (-3, 1) (-2, 0);
+ TERM d_centro := (-2.5, 0) (0, 1) (2.5, 0);
+ TERM d_dir_inclinada := (2, 0) (3, 1) (4, 0);
+ TERM d_dir := (4, 0) (6, 1) (8, 0);
+ TERM d_dir_completa := (6, 0) (12,1);
+ METHOD : COG;
+ DEFAULT := 0;
+END_DEFUZZIFY
+
+
+
+RULEBLOCK No1
+    AND : MIN;
+    OR : MAX;
+
+RULE 1 : IF (angulo IS virado_cima)
+        AND (posX IS centro_x) THEN
+                  direcao IS d_centro;
+
+RULE 2 : IF (angulo IS virado_direita)
+        AND (posX IS esquerda_inclinado) THEN
+                  direcao IS d_dir;
+
+RULE 3 : IF (angulo IS virado_esquerda)
+        AND (posX IS direita_inclinado) THEN
+                  direcao IS d_esq;
+
+RULE 4 : IF (angulo IS virado_baixo)
+        AND (posX IS esquerda) THEN
+                  direcao IS d_esq_completa;
+
+RULE 5 : IF (angulo IS virado_baixo)
+        AND (posX IS direita) THEN
+                  direcao IS d_dir_completa;
+
+RULE 6 : IF (angulo IS virado_esquerda_baixo) THEN
+                   direcao IS d_esq_completa;
+
+RULE 7 : IF (angulo IS virado_direita_baixo) THEN
+                   direcao IS d_dir_completa;
+
+RULE 8 : IF (posX IS direita) THEN
+                  direcao IS d_esq_completa;
+
+RULE 9 : IF (posX IS esquerda) THEN
+                  direcao IS d_dir_completa;
+
+RULE 10 : IF (posX IS centro_x)
+         AND (angulo IS virado_esquerda_cima) THEN
+                    direcao IS d_esq_inclinada;
+
+RULE 11 : IF (posX IS centro_x)
+         AND (angulo IS virado_direita_cima) THEN
+                    direcao IS d_dir_inclinada;
+
+RULE 12 : IF (posX IS esquerda_inclinado)
+         AND (angulo IS virado_cima) THEN
+                    direcao IS d_dir_inclinada;
+
+RULE 13 : IF (posX IS direita_inclinado)
+         AND (angulo IS virado_cima) THEN
+                    direcao IS d_esq_inclinada;
+
+RULE 14 : IF (posY IS centro_y)
+          OR (posY IS baixo_inclinado) THEN
+                   direcao IS d_centro;
+
+RULE 15 : IF (posX IS direita_inclinado)
+          OR (posX IS direita AND posY IS baixo AND angulo IS virado_direita_baixo)
+                   THEN direcao IS d_centro;
+
+RULE 16 : IF (angulo IS virado_esquerda) AND posX IS centro_x THEN direcao IS d_esq;
+
+RULE 17 : IF (angulo IS virado_direita)
+         AND (posX IS centro_x) THEN
+                   direcao IS d_dir;
+END_RULEBLOCK
+END_FUNCTION_BLOCK

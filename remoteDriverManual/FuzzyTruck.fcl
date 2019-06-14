@@ -1,0 +1,101 @@
+/*
+	Example: A tip calculation FIS (fuzzy inference system)
+	Calculates tip based on 'servie' and 'food'
+
+	If you want to about this example (and fuzzy logic), please 
+	read Matlab's tutorial on fuzzy logic toolbox 
+	http://www.mathworks.com/access/helpdesk/help/pdf_doc/fuzzy/fuzzy.pdf
+
+									Pablo Cingolani 
+									pcingola@users.sourceforge.net
+*/
+
+FUNCTION_BLOCK tipper	// Block definition (there may be more than one block per file)
+
+VAR_INPUT				// Define input variables
+	x : REAL;
+	angle: REAL;
+END_VAR
+
+VAR_OUTPUT				// Define output variable
+	wheelAngle : REAL;
+END_VAR
+
+FUZZIFY x			// Fuzzify input variable 'x': {'LE', 'LC', 'CE', 'RC', 'RI'}
+	TERM LE := (0.00, 1)	(0.10, 1)	(0.10, 1) 	(0.35, 0); // Left
+	TERM LC := (0.30, 0)	(0.40, 1) 	(0.40, 1)	(0.50, 0); // Left-Center
+	TERM CE := (0.45, 0)	(0.50, 1) 	(0.50, 1)	(0.55, 0); // Center
+	TERM RC := (0.50, 0)	(0.60, 1) 	(0.60, 1)	(0.70, 0); // Right-Center
+	TERM RI := (0.65, 0)	(0.90, 1) 	(0.90, 1)	(1.00, 1); // Right
+END_FUZZIFY
+
+FUZZIFY angle			// Fuzzify input variable 'angle': {'LE', 'CL', 'CE', 'CR', 'RI'}
+	TERM RB := (-100, 0)	(-45, 1)	(-45, 1) 	(10.0, 0); // Right-Bellow
+	TERM RU := (-10, 0)		(35.0, 1) 	(35.0, 1)	(60.0, 0); // Right-Upper
+	TERM RV := (45.0, 0)	(67.5, 1) 	(67.5, 1)	(90.0, 0); // Right-Vertical
+	TERM VE := (80.0, 0)	(90.0, 1) 	(90.0, 1)	(100, 0); // Vertical
+	TERM LV := (90.0, 0)	(112.5, 1) 	(112.5, 1)	(135, 0); // Left-Vertical
+	TERM LU := (120, 0)		(155, 1) 	(155, 1)	(190, 0); // Left-Upper
+	TERM LB := (170, 0)		(225, 1) 	(225, 1)	(280, 0); // Left-Bellow
+END_FUZZIFY
+
+DEFUZZIFY wheelAngle	// Defzzzify output variable 'tip' : {'cheap', 'average', 'generous' }
+	TERM NB := (-0.30, 1) 	(-0.15, 0) 	(-0.15, 0) 	(-0.15, 0);
+	TERM NM := (-0.25, 0) 	(-0.15, 1) 	(-0.15, 1) 	(-0.05, 0);
+	TERM NS := (-0.12, 0)	(-0.06, 1) 	(-0.06, 1) 	(0.00, 0);
+	TERM ZE := (-0.05, 0) 	(0.00, 1) 	(0.00, 1) 	(0.05, 0);
+	TERM PS := (0.00, 0) 	(0.06, 1) 	(0.06, 1) 	(0.12, 0);
+	TERM PM := (0.05, 0) 	(0.15, 1) 	(0.15, 1) 	(0.25, 0);
+	TERM PB := (0.18, 0)	(0.30, 1) 	(0.30, 1) 	(0.30, 1);
+	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+
+RULEBLOCK No1
+	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'or' to fulfill DeMorgan's Law)
+	ACT : MIN;			// Use 'min' activation method
+	ACCU : MAX;			// Use 'max' accumulation method
+
+	RULE 1 	: IF x IS LE AND angle IS RB THEN wheelAngle IS PS;
+	RULE 2 	: IF x IS LE AND angle IS RU THEN wheelAngle IS NS;
+	RULE 3 	: IF x IS LE AND angle IS RV THEN wheelAngle IS NM;
+	RULE 4 	: IF x IS LE AND angle IS VE THEN wheelAngle IS NM;
+	RULE 5 	: IF x IS LE AND angle IS LV THEN wheelAngle IS NB;
+	RULE 6 	: IF x IS LE AND angle IS LU THEN wheelAngle IS NB;
+	RULE 7 	: IF x IS LE AND angle IS LB THEN wheelAngle IS NB;
+	
+	RULE 8 	: IF x IS LC AND angle IS RB THEN wheelAngle IS PM;
+	RULE 9 	: IF x IS LC AND angle IS RU THEN wheelAngle IS PS;
+	RULE 10 : IF x IS LC AND angle IS RV THEN wheelAngle IS NS;
+	RULE 11 : IF x IS LC AND angle IS VE THEN wheelAngle IS NM;
+	RULE 12 : IF x IS LC AND angle IS LV THEN wheelAngle IS NM;
+	RULE 13 : IF x IS LC AND angle IS LU THEN wheelAngle IS NB;
+	RULE 14 : IF x IS LC AND angle IS LB THEN wheelAngle IS NB;
+	
+	RULE 15 : IF x IS CE AND angle IS RB THEN wheelAngle IS PM;
+	RULE 16 : IF x IS CE AND angle IS RU THEN wheelAngle IS PM;
+	RULE 17 : IF x IS CE AND angle IS RV THEN wheelAngle IS PS;
+	RULE 18 : IF x IS CE AND angle IS VE THEN wheelAngle IS ZE;
+	RULE 19 : IF x IS CE AND angle IS LV THEN wheelAngle IS NS;
+	RULE 20 : IF x IS CE AND angle IS LU THEN wheelAngle IS NM;
+	RULE 21 : IF x IS CE AND angle IS LB THEN wheelAngle IS NM;
+	
+	RULE 22 : IF x IS RC AND angle IS RB THEN wheelAngle IS PB;
+    RULE 23 : IF x IS RC AND angle IS RU THEN wheelAngle IS PB;
+    RULE 24 : IF x IS RC AND angle IS RV THEN wheelAngle IS PM;
+    RULE 25 : IF x IS RC AND angle IS VE THEN wheelAngle IS PM;
+    RULE 26 : IF x IS RC AND angle IS LV THEN wheelAngle IS PS;
+    RULE 27 : IF x IS RC AND angle IS LU THEN wheelAngle IS NS;
+    RULE 28 : IF x IS RC AND angle IS LB THEN wheelAngle IS NM;
+    
+    RULE 29 : IF x IS RI AND angle IS RB THEN wheelAngle IS PB;
+    RULE 30 : IF x IS RI AND angle IS RU THEN wheelAngle IS PB;
+    RULE 31 : IF x IS RI AND angle IS RV THEN wheelAngle IS PB;
+    RULE 32 : IF x IS RI AND angle IS VE THEN wheelAngle IS PM;
+    RULE 33 : IF x IS RI AND angle IS LV THEN wheelAngle IS PM;
+    RULE 34 : IF x IS RI AND angle IS LU THEN wheelAngle IS PS;
+    RULE 35 : IF x IS RI AND angle IS LB THEN wheelAngle IS NS;
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
+
